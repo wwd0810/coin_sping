@@ -1,0 +1,74 @@
+server:
+  port: 7070
+  servlet:
+    context-path: /cash_api
+    encoding:
+      enabled: true
+      force: true
+      charset: UTF-8
+
+spring:
+  application:
+    name:
+      cash-link
+  profiles:
+    active: local
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  mvc:
+    throw-exception-if-no-handler-found: true
+    dispatch-options-request: true
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+  datasource:
+    data:
+      - classpath:/mybatis/init.sql
+    initialization-mode: always
+    url: jdbc:log4jdbc:mariadb://localhost:3306/cashlink?useSSL=false&useUnicode=true&chartacterEncoding=utf8&serverTimezone=Asia/Seoul
+    username: root
+    password: Laonpp00..L
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    hikari:
+      pool-name: Hikari-CP
+      maximum-pool-size: 10
+      minimum-idle: 2
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+  rabbitmq:
+    host: 192.168.100.237
+    port: 5672
+    username: admin
+    password: Laonpp00..L
+
+mybatis:
+  config-location: classpath:/mybatis/mybatis-config.xml
+  mapper-locations:
+    - classpath:/mybatis/mapper/*/*.xml
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_URL:http://192.168.100.237:10000/eureka}
+
+security:
+  oauth2:
+    client:
+      client-id: cashlink
+      client-secret: Laonpp00..L
+    resource:
+      token-info-uri: http://192.168.100.237/auth_api/oauth/check_token
+      user-info-uri: http://192.168.100.237/resource_api/api/users/me
+      prefer-token-info: false
+
+market:
+  fees: 0.5

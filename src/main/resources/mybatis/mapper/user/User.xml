@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserRepository">
+
+    <select id="readUser" parameterType="Map" resultType="User">
+        select
+        id
+        , username
+        , name
+        , phone
+        , birth
+        , sex
+        , token
+        , created_at
+        , updated_at
+        from tbl_user
+        <where>
+            <if test="user_id != null">
+                and id = #{user_id}
+            </if>
+            <if test="username != null and !username.equals('')">
+                and username = #{username}
+            </if>
+            <if test="phone != null and !phone.equals('')">
+                and phone = #{phone}
+            </if>
+        </where>
+    </select>
+
+    <insert id="createUser" parameterType="Map">
+        insert into tbl_user (username, name, phone, birth, sex)
+        values (#{username}, #{name}, #{phone}, #{birth}, #{sex})
+    </insert>
+
+    <update id="updateUser" parameterType="Map">
+        update tbl_user
+        <set>
+            <if test="name != null and !name.equals('')">
+                name = #{name}
+            </if>
+            <if test="phone != null and !phone.equals('')">
+                , phone = #{phone}
+            </if>
+            <if test="birth != null and !birth.equals('')">
+                , birth = #{birth}
+            </if>
+            <if test="sex != null and !sex.equals('')">
+                , sex = #{sex}
+            </if>
+            <if test="token != null and !token.equals('')">
+                , token = #{token}
+            </if>
+        </set>
+        <where>
+            <if test="username != null and !username.equals('')">
+                and username = #{username}
+            </if>
+            <if test="user_id != null">
+                and id = #{user_id}
+            </if>
+        </where>
+    </update>
+
+</mapper>

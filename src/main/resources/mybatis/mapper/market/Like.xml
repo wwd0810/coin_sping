@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MarketLikeRepository">
+
+    <select id="countLike" parameterType="Map" resultType="Long">
+        select
+            count(1)
+        from tbl_market_like
+        <where>
+            <if test="market_id != null">
+                and market_id = #{market_id}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+        </where>
+    </select>
+
+    <select id="isLike" parameterType="Map" resultType="Boolean">
+        select exists(select 1 from tbl_market_like where market_id = #{market_id} and user_id = #{user_id})
+    </select>
+
+    <delete id="unLike" parameterType="Map">
+        delete from tbl_market_like
+        where
+            market_id = #{market_id}
+            and user_id = #{user_id}
+    </delete>
+
+    <insert id="like" parameterType="Map">
+        insert into tbl_market_like (market_id, user_id)
+        values (#{market_id}, #{user_id})
+    </insert>
+
+</mapper>

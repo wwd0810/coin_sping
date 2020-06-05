@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PurchaseRepository">
+
+    <select id="readPurchase" parameterType="Map" resultMap="purchase">
+        select
+            tmp.id
+            , tmp.status
+            , tmp.reason
+            , tmp.canceled_at
+            , tmp.approved_at
+            , tmp.created_at
+            , tmp.updated_at
+            , buyer.id buyer_id
+            , buyer.username buyer_username
+            , buyer.name buyer_name
+            , buyer.phone buyer_phone
+        from tbl_market_purchase tmp
+        inner join tbl_user buyer on buyer.id = tmp.buyer_id
+        inner join tbl_market tm on tmp.market_id = tm.id
+        inner join tbl_user seller on seller.id = tm.seller_id
+        <where>
+            <if test="buyer_id != null">
+                and buyer.id = #{buyer_id}
+            </if>
+            <if test="seller_id != null">
+                and seller.id = #{seller_id}
+            </if>
+            <if test="market_id != null">
+                and tm.id = #{market_id}
+            </if>
+            <if test="purchase_id != null">
+                and tmp.id = #{purchase_id}
+            </if>
+            <if test="purchase_status != null">
+                and tmp.status = #{purchase_status}
+            </if>
+            <if test="market_status != null">
+                and tm.status = #{market_status}
+            </if>
+        </where>
+    </select>
+
+    <select id="readPurchaseList" parameterType="Map" resultMap="purchase">
+        select
+            tmp.id
+            , tmp.status
+            , tmp.reason
+            , tmp.canceled_at
+            , tmp.approved_at
+            , tmp.created_at
+            , tmp.updated_at
+            , buyer.id buyer_id
+            , buyer.username buyer_username
+            , buyer.name buyer_name
+            , buyer.phone buyer_phone
+        from tbl_market_purchase tmp
+        inner join tbl_user buyer on buyer.id = tmp.buyer_id
+        inner join tbl_market tm on tmp.market_id = tm.id
+        inner join tbl_user seller on seller.id = tm.seller_id
+        <where>
+            <if test="buyer_id != null">
+                and buyer.id = #{buyer_id}
+            </if>
+            <if test="seller_id != null">
+                and seller.id = #{seller_id}
+            </if>
+            <if test="market_id != null">
+                and tm.id = #{market_id}
+            </if>
+            <if test="purchase_id != null">
+                and tmp.id = #{purchase_id}
+            </if>
+            <if test="purchase_status != null">
+                and tmp.status = #{purchase_status}
+            </if>
+            <if test="market_status != null">
+                and tm.status = #{market_status}
+            </if>
+        </where>
+        order by tmp.created_at desc
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <select id="countPurchaseList" parameterType="Map" resultType="Long">
+        select
+            count(1)
+        from tbl_market_purchase tmp
+        inner join tbl_user buyer on buyer.id = tmp.buyer_id
+        inner join tbl_market tm on tmp.market_id = tm.id
+        inner join tbl_user seller on seller.id = tm.seller_id
+        <where>
+            <if test="buyer_id != null">
+                and buyer.id = #{buyer_id}
+            </if>
+            <if test="seller_id != null">
+                and seller.id = #{seller_id}
+            </if>
+            <if test="market_id != null">
+                and tm.id = #{market_id}
+            </if>
+            <if test="purchase_id != null">
+                and tmp.id = #{purchase_id}
+            </if>
+            <if test="purchase_status != null">
+                and tmp.status = #{purchase_status}
+            </if>
+            <if test="market_status != null">
+                and tm.status = #{market_status}
+            </if>
+        </where>
+    </select>
+
+    <select id="readPurchaseReport" parameterType="Map" resultMap="report">
+        select
+            purchase_id
+            , `from`.id from_id
+            , `from`.username from_username
+            , `from`.name from_name
+            , `from`.phone from_phone
+            , `to`.id to_id
+            , `to`.username to_username
+            , `to`.name to_name
+            , `to`.phone to_phone
+            , tmpr.reason
+            , tmpr.created_at
+            , tmpr.updated_at
+        from tbl_market_purchase_report tmpr
+        inner join tbl_user `from` on `from`.id = tmpr.`from`
+        inner join tbl_user `to` on `to`.id = tmpr.`to`
+        <where>
+            <if test="purchase_id != null">
+                and tmpr.purchase_id = #{purchase_id}
+            </if>
+            <if test="from != null">
+                and `from`.id = #{from}
+            </if>
+            <if test="to != null">
+                and `to`.id = #{to}
+            </if>
+        </where>
+    </select>
+
+    <insert id="createPurchase" parameterType="Map">
+        insert into tbl_market_purchase (market_id, buyer_id)
+        values (#{market_id}, #{buyer_id})
+    </insert>
+
+    <insert id="createPurchaseReport" parameterType="Map">
+        insert into tbl_market_purchase_report (purchase_id, `from`, `to`, reason)
+        values (#{purchase_id}, #{from}, #{to}, #{reason})
+    </insert>
+
+    <update id="updatePurchase" parameterType="Map">
+        update tbl_market_purchase
+        <set>
+            <if test="reason != null and !reason.equals('')">
+                reason = #{reason}
+            </if>
+            <if test="status != null">
+                , status = #{status}
+            </if>
+            <if test="canceled_at != null">
+                , canceled_at = #{canceled_at}
+            </if>
+            <if test="approved_at != null">
+                , approved_at = #{approved_at}
+            </if>
+        </set>
+        <where>
+            <if test="purchase_id != null">
+                and id = #{purchase_id}
+            </if>
+        </where>
+    </update>
+
+    <resultMap id="purchase" type="Purchase">
+        <id column="id" property="id" />
+        <result column="status" property="status" />
+        <result column="reason" property="reason" />
+        <result column="canceled_at" property="canceled_at" />
+        <result column="approved_at" property="approved_at" />
+        <result column="created_at" property="created_at" />
+        <result column="updated_at" property="updated_at" />
+        <association property="buyer" javaType="UserMinify" columnPrefix="buyer_">
+            <id column="id" property="id" />
+            <result column="username" property="username" />
+            <result column="name" property="name" />
+            <result column="phone" property="phone" />
+        </association>
+    </resultMap>
+
+    <resultMap id="report" type="Report">
+        <id column="purchase_id" property="purchase_id" />
+        <association property="from" columnPrefix="from_">
+            <id column="id" property="id" />
+            <result column="username" property="username" />
+            <result column="name" property="name" />
+            <result column="phone" property="phone" />
+        </association>
+        <association property="to" columnPrefix="to_">
+            <id column="id" property="id" />
+            <result column="username" property="username" />
+            <result column="name" property="name" />
+            <result column="phone" property="phone" />
+        </association>
+    </resultMap>
+
+</mapper>

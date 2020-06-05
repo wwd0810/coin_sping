@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+<!--            <settings>-->
+<!--                <setting name="lazyLoadingEnabled" value="true"/>-->
+<!--            </settings>-->
+
+    <typeAliases>
+        <!--     Auth     -->
+        <typeAlias type="com.laon.cashlink.entity.user.User" alias="User" />
+        <typeAlias type="com.laon.cashlink.entity.user.UserMinify" alias="UserMinify" />
+        <typeAlias type="com.laon.cashlink.entity.user.Account" alias="Account" />
+        <typeAlias type="com.laon.cashlink.entity.user.Transaction" alias="Transaction" />
+
+        <typeAlias type="com.laon.cashlink.entity.user.Notification" alias="Notification" />
+
+        <!--    Market   -->
+        <typeAlias type="com.laon.cashlink.entity.market.Market" alias="Market" />
+        <typeAlias type="com.laon.cashlink.entity.market.Purchase" alias="Purchase" />
+
+        <!--    Common   -->
+        <typeAlias type="com.laon.cashlink.entity.common.Policy" alias="Policy" />
+
+        <typeAlias type="com.laon.cashlink.common.define.market.MarketStatus" alias="MarketStatus" />
+        <typeAlias type="com.laon.cashlink.common.define.market.PurchaseStatus" alias="PurchaseStatus" />
+
+        <typeAlias type="com.laon.cashlink.entity.common.Notice" alias="Notice" />
+
+        <!--    Other    -->
+        <typeAlias type="java.util.Map" alias="Map"/>
+        <typeAlias type="java.util.List" alias="List"/>
+        <typeAlias type="java.lang.Integer" alias="Integer"/>
+        <typeAlias type="java.lang.Long" alias="Long"/>
+        <typeAlias type="java.lang.String" alias="String"/>
+        <typeAlias type="java.lang.Boolean" alias="Boolean"/>
+    </typeAliases>
+
+    <typeHandlers>
+        <typeHandler handler="com.laon.cashlink.common.define.DeleteFlag$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.PolicyCode$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.Duration$TypeHandler" />
+
+        <typeHandler handler="com.laon.cashlink.common.define.user.AccountType$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.user.NotiSubType$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.user.NotiType$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.user.NotiSubType$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.user.UserGender$TypeHandler" />
+
+        <typeHandler handler="com.laon.cashlink.common.define.market.MarketStatus$TypeHandler" />
+        <typeHandler handler="com.laon.cashlink.common.define.market.PurchaseStatus$TypeHandler" />
+    </typeHandlers>
+</configuration>

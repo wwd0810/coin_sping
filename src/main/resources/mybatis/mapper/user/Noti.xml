@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NotiRepository">
+
+    <select id="readNotiList" parameterType="Map" resultType="Notification">
+        select
+            id
+            , prefix
+            , message
+            , suffix
+            , type
+            , sub_type
+            , status
+            , created_at
+            , updated_at
+        from tbl_notification
+        <where>
+            <if test="noti_id != null">
+                and id = #{noti_id}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+            <if test="type != null">
+                and type = #{type}
+            </if>
+            <if test="sub_type != null and !sub_type.equals('')">
+                and sub_type = #{sub_type}
+            </if>
+            <if test="status != null">
+                and `status` = #{status}
+            </if>
+            and delete_yn = 'N'
+        </where>
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <select id="countNotiList" parameterType="Map" resultType="Long">
+        select
+           count(1)
+        from tbl_notification
+        <where>
+            <if test="noti_id != null">
+                and id = #{noti_id}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+            <if test="type != null and !type.equals('')">
+                and type = #{type}
+            </if>
+            <if test="sub_type != null and !sub_type.equals('')">
+                and sub_type = #{sub_type}
+            </if>
+            <if test="status != null">
+                and `status` = #{status}
+            </if>
+            and delete_yn = 'N'
+        </where>
+    </select>
+
+    <select id="readNoti" parameterType="Map" resultType="Notification">
+        select
+        id
+        , prefix
+        , message
+        , suffix
+        , type
+        , sub_type
+        , status
+        , created_at
+        , updated_at
+        from tbl_notification
+        <where>
+            <if test="noti_id != null">
+                and id = #{noti_id}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+            <if test="type != null">
+                and type = #{type}
+            </if>
+            <if test="sub_type != null and !sub_type.equals('')">
+                and sub_type = #{sub_type}
+            </if>
+            <if test="status != null">
+                and `status` = #{status}
+            </if>
+            and delete_yn = 'N'
+        </where>
+    </select>
+
+    <select id="checkNotReadNoti" parameterType="Map" resultType="Boolean">
+        select exists(
+            select
+                1
+            from tbl_notification tn
+            where
+                  tn.user_id = #{user_id} and tn.status = 'NOT_READ'
+        )
+    </select>
+
+    <update id="updateNoti" parameterType="Map">
+        update tbl_notification
+        <set>
+            <if test="status != null and !status.equals('')">
+                status = #{status}
+            </if>
+            <if test="delete_yn != null and !delete_yn.equals('')">
+                , delete_yn = #{delete_yn}
+                , deleted_at = current_timestamp
+            </if>
+        </set>
+        <where>
+            <if test="noti_id != null">
+                and id = #{noti_id}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+            <if test="type != null and !type.equals('')">
+                and type = #{type}
+            </if>
+            <if test="sub_type != null and !sub_type.equals('')">
+                and sub_type = #{sub_type}
+            </if>
+        </where>
+    </update>
+
+</mapper>

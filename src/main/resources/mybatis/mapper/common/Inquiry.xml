@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InquiryRepository">
+
+    <select id="readInquiryList" parameterType="Map" resultType="Inquiry">
+        select
+            id
+            , title
+            , contents
+            , answer
+            , status
+            , created_at
+            , updated_at
+        from tbl_inquiry
+        <where>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+        </where>
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <insert id="createInquiry" parameterType="Map">
+        insert into tbl_inquiry (user_id, title, contents)
+        values (#{user_id}, #{title}, #{contents})
+    </insert>
+
+    <update id="updateInquiry" parameterType="Map">
+        update tbl_inquiry
+        <set>
+            <if test="answer != null and !answer.equals('')">
+                answer = #{answer}
+            </if>
+            <if test="status != null">
+                , status = #{status}
+            </if>
+        </set>
+        <where>
+            <if test="inquiry_id != null">
+                and id = #{inquiry_id}
+            </if>
+        </where>
+    </update>
+
+</mapper>

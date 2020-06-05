@@ -1,0 +1,16 @@
+security:
+  oauth2:
+    client:
+      client-id: cashlink
+      client-secret: Laonpp00..L
+    resource:
+      token-info-uri: http://gateway.caslink.kr/auth_api/oauth/check_token
+      user-info-uri: http://gateway.cashlink.kr/resource_api/api/users/me
+      prefer-token-info: false
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:Laonpp00..L@eureka.cashlink.kr:8761/eureka}

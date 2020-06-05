@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NoticeRepository">
+
+    <select id="readNoticeList" parameterType="Map" resultType="Notice">
+        select
+            id
+            , title
+            , contents
+            , created_at
+            , updated_at
+        from tbl_notice
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <select id="countNoticeList" parameterType="Map" resultType="Long">
+        select
+            count(1)
+        from tbl_notice
+    </select>
+
+    <select id="readNotice" parameterType="Map" resultType="Notice">
+        select
+            id
+            , title
+            , contents
+            , created_at
+            , updated_at
+        from tbl_notice
+        <where>
+            <if test="notice_id != null">
+                and id = #{notice_id}
+            </if>
+        </where>
+    </select>
+
+    <insert id="createNotice" parameterType="Map">
+        insert into tbl_notice (title, contents, created_by)
+        values (#{title}, #{contents}, #{created_by})
+    </insert>
+
+    <update id="updateNotice" parameterType="Map">
+        update tbl_notice
+        <set>
+            <if test="title != null and !title.equals('')">
+                title = #{title}
+            </if>
+            <if test="contents != null and !contents.equals('')">
+                , contents = #{contents}
+            </if>
+        </set>
+        <where>
+            <if test="notice_id != null">
+                and id = #{notice_id}
+            </if>
+        </where>
+    </update>
+
+    <delete id="deleteNotice" parameterType="Map">
+        delete from tbl_notice
+        where id = #{notice_id}
+    </delete>
+
+</mapper>

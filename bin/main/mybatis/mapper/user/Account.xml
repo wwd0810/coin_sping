@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AccountRepository">
+
+    <select id="readAccountList" parameterType="Map" resultType="Account">
+        select
+        id
+        , user_id
+        , type
+        , quantity
+        , created_at
+        , updated_at
+        from tbl_account
+        <where>
+            <if test="account_id != null">
+                and id = #{account_id}
+            </if>
+            <if test="account_type != null">
+                and type = #{account_type}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+        </where>
+    </select>
+
+    <select id="readAccount" parameterType="Map" resultType="Account">
+        select
+        id
+        , user_id
+        , type
+        , quantity
+        , created_at
+        , updated_at
+        from tbl_account
+        <where>
+            <if test="account_id != null">
+                and id = #{account_id}
+            </if>
+            <if test="account_type != null">
+                and type = #{account_type}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+        </where>
+    </select>
+
+    <select id="readTransactionList" parameterType="Map" resultMap="transaction">
+        select
+            tat.id id
+            , tat.title title
+            , tat.description description
+            , tat.amount amount
+            , tat.created_at created_at
+            , tat.updated_at updated_at
+            , `from`.id from_account_id
+            , `from`.type from_account_type
+            , `from`.quantity from_account_quantity
+            , `from`.created_at from_account_created_at
+            , `from`.updated_at from_account_updated_at
+            , `to`.id to_account_id
+            , `to`.type to_account_type
+            , `to`.quantity to_account_quantity
+            , `to`.created_at to_account_created_at
+            , `to`.updated_at to_account_updated_at
+            , `from_u`.id from_user_id
+            , `from_u`.username from_user_username
+            , `from_u`.name from_user_name
+            , `from_u`.phone from_user_phone
+            , `to_u`.id to_user_id
+            , `to_u`.username to_user_username
+            , `to_u`.name to_user_name
+            , `to_u`.phone to_user_phone
+        from tbl_account_transaction tat
+        inner join tbl_account `from` on tat.`from` = `from`.id
+        left outer join tbl_account `to` on tat.`to` = `to`.id
+        inner join tbl_user `from_u` on `from`.user_id = `from_u`.id
+        left outer join tbl_user `to_u` on `to`.user_id = `to_u`.id
+        <where>
+            <if test="from_user_id != null">
+                and `from_u`.id = #{from_user_id}
+            </if>
+            <if test="to_user_id != null">
+                and `to_u`.id = #{to_user_id}
+            </if>
+            <if test="account_id != null and !account_id.equals('')">
+                and (
+                    `from`.id = #{account_id}
+                    or `to`.id = #{account_id}
+                )
+            </if>
+            <if test="from != null and !from.equals('')">
+                and `from`.id = #{from}
+            </if>
+            <if test="to != null and !to.equals('')">
+                and `to`.id = #{to}
+            </if>
+        </where>
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <select id="countTransactionList" parameterType="Map" resultType="Long">
+        select
+            count(1)
+        from tbl_account_transaction tat
+        inner join tbl_account `from` on tat.`from` = `from`.id
+        left outer join tbl_account `to` on tat.`to` = `to`.id
+        inner join tbl_user `from_u` on `from`.user_id = `from_u`.id
+        left outer join tbl_user `to_u` on `to`.user_id = `to_u`.id
+        <where>
+            <if test="from_user_id != null">
+                and `from_u`.id = #{from_user_id}
+            </if>
+            <if test="to_user_id != null">
+                and `to_u`.id = #{to_user_id}
+            </if>
+            <if test="account_id != null and !account_id.equals('')">
+                and (
+                `from`.id = #{account_id}
+                or `to`.id = #{account_id}
+                )
+            </if>
+            <if test="from != null and !from.equals('')">
+                and `from`.id = #{from}
+            </if>
+            <if test="to != null and !to.equals('')">
+                and `to`.id = #{to}
+            </if>
+        </where>
+    </select>
+
+    <insert id="createAccount" parameterType="Map">
+        insert into tbl_account (id, user_id, type)
+        value (#{account_id}, #{user_id}, #{account_type})
+    </insert>
+
+    <insert id="createTransaction" parameterType="Map">
+        insert into tbl_account_transaction (`from`, `to`, title, description, amount)
+        values (#{from}, #{to}, #{title}, #{description}, #{amount})
+    </insert>
+
+    <update id="updateAccount" parameterType="Map">
+        update tbl_account
+        <set>
+            <if test="quantity != null">
+                quantity = #{quantity}
+            </if>
+        </set>
+        <where>
+            <if test="account_id != null and !account_id.equals('')">
+                and id = #{account_id}
+            </if>
+            <if test="account_type != null">
+                and type = #{account_type}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{user_id}
+            </if>
+        </where>
+    </update>
+
+    <resultMap id="transaction" type="Transaction">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="description" property="description" />
+        <result column="amount" property="amount" />
+        <result column="created_at" property="created_at" />
+        <result column="updated_at" property="updated_at" />
+        <association property="from" columnPrefix="from_account_">
+            <id column="id" property="id" />
+            <result column="type" property="type" />
+            <result column="quantity" property="quantity" />
+            <result column="created_at" property="created_at" />
+            <result column="updated_at" property="updated_at" />
+        </association>
+        <association property="to" columnPrefix="to_account_">
+            <id column="id" property="id" />
+            <result column="type" property="type" />
+            <result column="quantity" property="quantity" />
+            <result column="created_at" property="created_at" />
+            <result column="updated_at" property="updated_at" />
+        </association>
+        <association property="from_user" javaType="User" columnPrefix="from_user_">
+            <id column="id" property="id" />
+            <result column="username" property="username" />
+            <result column="name" property="name" />
+            <result column="phone" property="phone" />
+        </association>
+        <association property="to_user" javaType="User" columnPrefix="to_user_">
+            <id column="id" property="id" />
+            <result column="username" property="username" />
+            <result column="name" property="name" />
+            <result column="phone" property="phone" />
+        </association>
+    </resultMap>
+
+</mapper>
