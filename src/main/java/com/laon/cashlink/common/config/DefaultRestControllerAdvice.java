@@ -11,6 +11,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.WebDataBinder;
@@ -111,6 +112,23 @@ public class DefaultRestControllerAdvice {
         returnMap.put("result", 0);
         returnMap.put("resultCode", ApiErrorCode.INVALID_PARAMETER.getCode());
         returnMap.put("resultMsg", ApiErrorCode.INVALID_PARAMETER.getMsg());
+
+        return returnMap;
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> methodArgumentsNotValidException(
+        MethodArgumentNotValidException e
+                                                               ) {
+        log.error("", e);
+        Map<String, Object> returnMap = new HashMap<>();
+
+        {
+            returnMap.put("result", 0);
+            returnMap.put("resultCode", ApiErrorCode.INVALID_PARAMETER.getCode());
+            returnMap.put("resultMsg", e.getMessage());
+        }
 
         return returnMap;
     }

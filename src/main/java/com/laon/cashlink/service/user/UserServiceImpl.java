@@ -402,6 +402,7 @@ class UserServiceImpl implements UserService {
 
         {
             payload.clear();
+            payload.put("username", map.get("username"));
             payload.put("name", map.get("name"));
             payload.put("phone", map.get("phone"));
             payload.put("birth", LocalDate.parse((String) map.get("birth"), DateTimeFormatter.ISO_DATE));
