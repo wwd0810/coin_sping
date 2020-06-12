@@ -1,19 +1,68 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="FaqRepository">
 
     <select id="readFaqList" parameterType="Map" resultType="Faq">
         select
-            id
-            , question
-            , answer
-            , created_at
-            , updated_at
+        id
+        , question
+        , answer
+        , created_at
+        , updated_at
         from tbl_faq
+        order by created_at desc
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (question LIKE concat('%', #{query}, '%') OR answer LIKE concat('%', #{query}, '%'))
+            </if>
+        </where>
         <if test="paging != null">
             limit #{paging.limit} offset #{paging.offset}
         </if>
     </select>
+
+    <select id="readFaq" parameterType="Map" resultType="Faq">
+        select id,
+               question,
+               answer,
+               created_at,
+               updated_at
+        from tbl_faq
+    <where>
+        <if test="faq_id != null">
+            and id = #{faq_id}
+        </if>
+    </where>
+
+    </select>
+
+    <insert id="createFaq" parameterType="Map">
+        insert into tbl_faq (question, answer)
+        values (#{question}, #{answer})
+    </insert>
+
+    <update id="updateFaq" parameterType="Map">
+        update tbl_faq
+        <set>
+            <if test="question != null and !question.equals('')">
+                question = #{question}
+            </if>
+            <if test="contents != null and !contents.equals('')">
+                , answer = #{answer}
+            </if>
+        </set>
+        <where>
+            <if test="faq_id != null">
+                and id = #{faq_id}
+            </if>
+        </where>
+    </update>
+
+    <delete id="deleteFaq" parameterType="Map">
+        delete
+        from tbl_faq
+        where id = #{faq_id}
+    </delete>
 
 </mapper>

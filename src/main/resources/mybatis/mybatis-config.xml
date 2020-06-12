@@ -20,8 +20,11 @@
         <typeAlias type="com.laon.cashlink.entity.market.Market" alias="Market" />
         <typeAlias type="com.laon.cashlink.entity.market.Purchase" alias="Purchase" />
         <typeAlias type="com.laon.cashlink.entity.market.Report" alias="Report" />
+        <typeAlias type="com.laon.cashlink.entity.market.MarketMinified" alias="MarketMinified" />
 
         <!--    Common   -->
+        <typeAlias type="com.laon.cashlink.entity.common.ServiceInfo" alias="ServiceInfo" />
+
         <typeAlias type="com.laon.cashlink.entity.common.Policy" alias="Policy" />
 
         <typeAlias type="com.laon.cashlink.common.define.market.MarketStatus" alias="MarketStatus" />

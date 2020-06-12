@@ -1,5 +1,6 @@
 package com.laon.cashlink.repository.market;
 
+import com.laon.cashlink.entity.common.MarketInfo;
 import com.laon.cashlink.entity.market.Market;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,10 @@ public class MarketRepository {
 
     public Market readMarket(Map<String, Object> payload) {
         return sql.selectOne("MarketRepository.readMarket", payload);
+    }
+
+    public List<MarketInfo> countDeals (Map<String, Object> payload) {
+        return sql.selectList("MarketRepository.countDeals", payload);
     }
 
     //CREATE

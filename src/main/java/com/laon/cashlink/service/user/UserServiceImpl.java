@@ -10,9 +10,11 @@ import com.laon.cashlink.common.define.user.NotiStatus;
 import com.laon.cashlink.common.define.user.NotiSubType;
 import com.laon.cashlink.common.define.user.NotiType;
 import com.laon.cashlink.common.exception.ApiException;
+import com.laon.cashlink.entity.common.Order;
 import com.laon.cashlink.entity.common.Paging;
 import com.laon.cashlink.entity.common.Policy;
 import com.laon.cashlink.entity.dto.Remit;
+import com.laon.cashlink.entity.market.Market;
 import com.laon.cashlink.entity.market.Purchase;
 import com.laon.cashlink.entity.user.Account;
 import com.laon.cashlink.entity.user.Notification;
@@ -26,14 +28,18 @@ import com.laon.cashlink.repository.user.AccountRepository;
 import com.laon.cashlink.repository.user.NotiRepository;
 import com.laon.cashlink.repository.user.UserRepository;
 import java.math.BigDecimal;
+import java.security.MessageDigest;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -54,6 +60,11 @@ class UserServiceImpl implements UserService {
 
     private final MarketRepository marketRepository;
     private final MarketLikeRepository marketLikeRepository;
+
+
+
+
+
 
     @Override
     public Map<String, Object> searchUser(String type, String query) throws Exception {
@@ -109,9 +120,17 @@ class UserServiceImpl implements UserService {
         }
         boolean checkNotReadNoti = notiRepository.checkNotReadNoti(payload);
 
+        {
+            payload.clear();
+            payload.put("user_id", user.getId());
+        }
+
+        boolean checkUserPin = userRepository.checkUserPin(payload);
+
         Map<String, Object> other = new HashMap<>();
         {
             other.put("unread_noti", checkNotReadNoti);
+            other.put("check_pin", checkUserPin);
         }
 
         {
@@ -140,13 +159,34 @@ class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public Map<String, Object> remit(User user, Remit.Request request) throws Exception {
+
         if (request.getFrom().equals(request.getTo())) {
             throw new ApiException(ApiErrorCode.NOT_AVAILABLE);
         }
 
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(request.getPassword().getBytes());
+
+        byte[] bytes = md.digest();
+
+
+
         {
+            payload.put("password", Hex.encodeHexString(bytes));
+            payload.put("user_id", user.getId());
+        }
+
+        Boolean duplicate = userRepository.duplicatePinPass(payload);
+
+        if(!duplicate) {
+            throw new ApiException(ApiErrorCode.PIN_NOT_MATCH);
+        }
+
+        {
+            payload.clear();
             payload.put("account_id", request.getFrom());
             payload.put("user_id", user.getId());
             payload.put("account_type", AccountType.DL);
@@ -240,7 +280,7 @@ class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Map<String, Object> readAccountTx(String account_id, Long page, User user) throws Exception {
+    public Map<String, Object> readAccountTx(String account_id, Long page, User user, String duration, String status) throws Exception {
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
         {
@@ -257,6 +297,8 @@ class UserServiceImpl implements UserService {
         {
             payload.clear();
             payload.put("account_id", account.getId());
+            payload.put("duration", duration);
+            payload.put("status", status);
             payload.put("paging", paging);
         }
         List<Transaction> txList = accountRepository.readTransactionList(payload);
@@ -473,4 +515,59 @@ class UserServiceImpl implements UserService {
         return returnMap;
     }
 
+
+    /*
+    * Pin Password 관련
+    * */
+
+    @Override
+    public Map<String, Object> duplicatePinPass(User user, String password) throws Exception {
+
+        Map<String, Object> returnMap = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(password.getBytes());
+
+        byte[] bytes = md.digest();
+
+        {
+            payload.put("user_id", user.getId());
+            payload.put("password", Hex.encodeHexString(bytes));
+        }
+
+        Boolean duplicate = userRepository.duplicatePinPass(payload);
+
+        if (!duplicate) {
+            throw new ApiException(ApiErrorCode.PIN_NOT_MATCH);
+        }
+
+        {
+            returnMap.put("duplicate", true);
+        }
+
+        return returnMap;
+
+    }
+
+    @Override
+    public Map<String, Object> updatePinPass(User user, String password) throws Exception {
+
+        Map<String, Object> returnMap = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(password.getBytes());
+
+        byte[] bytes = md.digest();
+        {
+            payload.put("user_id", user.getId());
+            payload.put("password", Hex.encodeHexString(bytes));
+        }
+
+        userRepository.updatePinPass(payload);
+
+        return returnMap;
+
+    }
 }

@@ -19,6 +19,29 @@ public class AdminNoticeServiceImpl implements AdminNoticeService {
     private final NoticeRepository noticeRepository;
 
     @Override
+    public Map<String, Object> readNotice(User user, Long notice_id) throws Exception {
+
+        Map<String, Object> returnMap = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>();
+
+        {
+            payload.put("notice_id", notice_id);
+        }
+
+        Notice notice = noticeRepository.readNotice(payload);
+
+        if (ObjectUtils.isEmpty(notice))
+            throw new ApiException(ApiErrorCode.NOTICE_NOT_FOUND);
+
+        {
+            returnMap.put("data", notice);
+        }
+
+        return returnMap;
+
+    }
+
+    @Override
     public Map<String, Object> createNotice(NoticeDTO.Request request, User user) throws Exception {
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
@@ -43,6 +66,7 @@ public class AdminNoticeServiceImpl implements AdminNoticeService {
         if (ObjectUtils.isEmpty(notice)) throw new ApiException(ApiErrorCode.NOTICE_NOT_FOUND);
 
         {
+            payload.clear();
             payload.put("notice_id", notice_id);
             payload.put("title", request.getTitle());
             payload.put("contents", request.getContents());

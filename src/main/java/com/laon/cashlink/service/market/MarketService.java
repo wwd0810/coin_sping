@@ -33,13 +33,13 @@ public interface MarketService {
 
     Map<String, Object> reportPurchaseRequest(Long market_id, Long purchase_id, String reason, User user) throws Exception;
 
-    Map<String, Object> readUserSales(User user, Long page, String order, MarketStatus status, String duration) throws Exception;
+    Map<String, Object> readUserSales(User user, Long page, String order, MarketStatus status, String duration, String query) throws Exception;
 
     Map<String, Object> createSale(User user, MarketSale.Request request) throws Exception;
 
     Map<String, Object> createPurchaseRequest(User User, Long market_id) throws Exception;
 
-    Map<String, Object> readUserPurchases(User user, Long page, String order) throws Exception;
+    Map<String, Object> readUserPurchases(User user, Long page, String order, String status, String duration, String query) throws Exception;
 
     Map<String, Object> toggleMarketLike(Long market_id, User user) throws Exception;
 

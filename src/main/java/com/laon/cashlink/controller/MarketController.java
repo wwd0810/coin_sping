@@ -424,12 +424,13 @@ public class MarketController {
         @RequestParam(required = false, defaultValue = "RECENT|DESC") String order,
         @RequestParam(required = false) MarketStatus status,
         @RequestParam(required = false) String duration,
+        @RequestParam(required = false) String query,
         HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
             returnMap.put("result", 1);
-            returnMap.put("data", marketService.readUserSales(user, page, order, status, duration));
+            returnMap.put("data", marketService.readUserSales(user, page, order, status, duration, query));
         } catch (ApiException e) {
             res.setStatus(e.getStatus());
             returnMap.put("result", 0);
@@ -483,13 +484,16 @@ public class MarketController {
         @AuthenticationPrincipal User user,
         @RequestParam(required = false, defaultValue = "0") Long page,
         @RequestParam(required = false, defaultValue = "RECENT|DESC") String order,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String duration,
+        @RequestParam(required = false) String query,
         HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
             res.setStatus(HttpStatus.CREATED.value());
             returnMap.put("result", 1);
-            returnMap.put("data", marketService.readUserPurchases(user, page, order));
+            returnMap.put("data", marketService.readUserPurchases(user, page, order, status, duration,query));
         } catch (ApiException e) {
             res.setStatus(e.getStatus());
             returnMap.put("result", 0);

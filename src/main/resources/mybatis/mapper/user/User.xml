@@ -1,7 +1,73 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="UserRepository">
+    <select id="readUserList" parameterType="Map" resultMap="user">
+        select
+        tu.id
+        , tu.username
+        , tu.name
+        , tu.phone
+        , tu.birth
+        , tu.sex
+        , tu.created_at
+        , tu.updated_at
+        , cp.id cp_id
+        , cp.type cp_type
+        , cp.quantity cp_quantity
+        , cp.created_at cp_created_at
+        , cp.updated_at cp_updated_at
+
+        , dl.id dl_id
+        , dl.type dl_type
+        , dl.quantity dl_quantity
+        , dl.created_at dl_created_at
+        , dl.updated_at dl_updated_at
+        from tbl_user tu
+        inner join tbl_account cp on tu.id = cp.user_id and cp.type = 'COIN_POINT'
+        inner join tbl_account dl on tu.id = dl.user_id and dl.type = 'DILLING'
+        order by tu.created_at desc
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (username LIKE concat('%', #{query}, '%') OR name LIKE concat('%', #{query}, '%'))
+            </if>
+            <if test="duration != null">
+                <choose>
+                    <when test="'TODAY'.equals(duration)">
+                        and tu.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY)
+                    </when>
+                    <when test="'1WEEK'.equals(duration)">
+                        and tu.created_at between date_add(curdate(), INTERVAL -1 WEEK) and date_add(curdate(), INTERVAL
+                        1
+                        DAY)
+                    </when>
+                    <when test="'1MONTH'.equals(duration)">
+                        and tu.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(),
+                        INTERVAL 1
+                        DAY)
+                    </when>
+                    <when test="'3MONTH'.equals(duration)">
+                        and tu.created_at between date_add(curdate(), INTERVAL -3 MONTH) and date_add(curdate(),
+                        INTERVAL 1
+                        DAY)
+                    </when>
+                    <when test="'6MONTH'.equals(duration)">
+                        and tu.created_at between date_add(curdate(), INTERVAL -6 MONTH) and date_add(curdate(),
+                        INTERVAL 1
+                        DAY)
+                    </when>
+                    <when test="'1YEAR'.equals(duration)">
+                        and tu.created_at between date_add(curdate(), INTERVAL -1 YEAR) and date_add(curdate(), INTERVAL
+                        1
+                        DAY)
+                    </when>
+                </choose>
+            </if>
+        </where>
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
 
     <select id="readUser" parameterType="Map" resultType="User">
         select
@@ -28,10 +94,52 @@
         </where>
     </select>
 
+    <select id="countUserList" parameterType="Map" resultType="Long">
+        select
+        count(1)
+        from tbl_user
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (username LIKE concat('%', #{query}, '%') OR name LIKE concat('%', #{query}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="checkUserPin" parameterType="Map" resultType="Boolean">
+        select exists(
+                       select 1
+                       from tbl_user
+                       where id = #{user_id}
+                         and passphrase IS NOT NULL)
+    </select>
+
+    <select id="duplicatePinPass" parameterType="Map" resultType="Boolean">
+        select
+        exists(
+        select 1
+        from tbl_user
+        where id = #{user_id}
+        and passphrase = #{password})
+    </select>
+
     <insert id="createUser" parameterType="Map">
         insert into tbl_user (username, name, phone, birth, sex)
         values (#{username}, #{name}, #{phone}, #{birth}, #{sex})
     </insert>
+
+    <update id="updatePinPass" parameterType="Map">
+        update tbl_user
+        <set>
+            <if test="password != null and !password.equals('')">
+                passphrase = #{password}
+            </if>
+        </set>
+        <where>
+            <if test="user_id != null">
+                and id = #{user_id}
+            </if>
+        </where>
+    </update>
 
     <update id="updateUser" parameterType="Map">
         update tbl_user
@@ -62,4 +170,28 @@
         </where>
     </update>
 
+    <resultMap id="user" type="User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="phone" property="phone"/>
+        <result column="birth" property="birth"/>
+        <result column="sex" property="sex"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
+        <association property="cp" columnPrefix="cp_">
+            <id column="id" property="id"/>
+            <result column="type" property="type"/>
+            <result column="quantity" property="quantity"/>
+            <result column="created_at" property="created_at"/>
+            <result column="updated_at" property="updated_at"/>
+        </association>
+        <association property="dl" columnPrefix="dl_">
+            <id column="id" property="id"/>
+            <result column="type" property="type"/>
+            <result column="quantity" property="quantity"/>
+            <result column="created_at" property="created_at"/>
+            <result column="updated_at" property="updated_at"/>
+        </association>
+    </resultMap>
 </mapper>

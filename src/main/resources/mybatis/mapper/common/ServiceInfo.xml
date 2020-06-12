@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ServiceInfoRepository">
+
+    <select id="readServiceInfo" parameterType="Map" resultType="ServiceInfo">
+        select * from tbl_service_info tsi
+        <where>
+            and tsi.id = 1
+        </where>
+    </select>
+
+    <update id="updateServiceInfo" parameterType="Map">
+        update tbl_service_info
+        <set>
+            <if test="service_name_ko != null and !service_name_ko.equals('')">
+                service_name_ko = #{service_name_ko}
+            </if>
+            <if test="service_name_en != null and !service_name_en.equals('')">
+                , service_name_en = #{service_name_en}
+            </if>
+            <if test="company_name_ko != null and !company_name_ko.equals('')">
+                , company_name_ko = #{company_name_ko}
+            </if>
+            <if test="company_name_en != null and !company_name_en.equals('')">
+                , company_name_en = #{company_name_en}
+            </if>
+            <if test="owner_name_ko != null and !owner_name_ko.equals('')">
+                , owner_name_ko = #{owner_name_ko}
+            </if>
+            <if test="owner_name_en != null and !owner_name_en.equals('')">
+                , owner_name_en = #{owner_name_en}
+            </if>
+            <if test="registration_num != null and !registration_num.equals('')">
+                , registration_num = #{registration_num}
+            </if>
+            <if test="mail_num != null and !mail_num.equals('')">
+                , mail_num = #{mail_num}
+            </if>
+            <if test="address_ko != null and !address_ko.equals('')">
+                , address_ko = #{address_ko}
+            </if>
+            <if test="address_en != null and !address_en.equals('')">
+                , address_en = #{address_en}
+            </if>
+            <if test="phone != null and !phone.equals('')">
+                , phone = #{phone}
+            </if>
+            <if test="fax != null and !fax.equals('')">
+                , fax = #{fax}
+            </if>
+            <if test="privacy_officer != null and !privacy_officer.equals('')">
+                , privacy_officer = #{privacy_officer}
+            </if>
+            <if test="admin_email != null and !admin_email.equals('')">
+                , admin_email = #{admin_email}
+            </if>
+        </set>
+        <where>
+            and id = 1
+        </where>
+    </update>
+
+<!--    <update id="updateNotice" parameterType="Map">-->
+<!--        update tbl_notice-->
+<!--        <set>-->
+<!--            <if test="title != null and !title.equals('')">-->
+<!--                title = #{title}-->
+<!--            </if>-->
+<!--            <if test="contents != null and !contents.equals('')">-->
+<!--                , contents = #{contents}-->
+<!--            </if>-->
+<!--        </set>-->
+<!--        <where>-->
+<!--            <if test="notice_id != null">-->
+<!--                and id = #{notice_id}-->
+<!--            </if>-->
+<!--        </where>-->
+<!--    </update>-->
+
+</mapper>

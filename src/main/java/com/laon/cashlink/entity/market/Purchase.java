@@ -28,6 +28,10 @@ public class Purchase {
         private LocalDateTime created_at;
         private LocalDateTime updated_at;
 
+        private MarketMinified market;
+
         private UserMinify buyer;
+
+        private UserMinify seller;
 
 }

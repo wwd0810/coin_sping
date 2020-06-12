@@ -22,6 +22,8 @@ public class Remit {
         private AccountType type;
 
         private BigDecimal amount;
+
+        private String password;
     }
 
 }

@@ -16,18 +16,25 @@ import com.laon.cashlink.entity.market.Report;
 import com.laon.cashlink.entity.user.Account;
 import com.laon.cashlink.entity.user.User;
 import com.laon.cashlink.repository.common.PolicyRepository;
+import com.laon.cashlink.repository.google.FirebaseRepository;
 import com.laon.cashlink.repository.market.MarketLikeRepository;
 import com.laon.cashlink.repository.market.MarketRepository;
 import com.laon.cashlink.repository.market.PurchaseRepository;
 import com.laon.cashlink.repository.user.AccountRepository;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.laon.cashlink.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.codec.binary.Hex;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -42,8 +49,11 @@ class MarketServiceImpl implements MarketService {
     private final MarketRepository marketRepository;
     private final PurchaseRepository purchaseRepository;
     private final PolicyRepository policyRepository;
+    private final FirebaseRepository firebaseRepository;
 
     private final MarketLikeRepository marketLikeRepository;
+
+    private final UserRepository userRepository;
 
     @Override
     public Map<String, Object> readMarketList(User user, Long page, Integer size, String orderType, String query)
@@ -60,11 +70,10 @@ class MarketServiceImpl implements MarketService {
             }
             payload.put("query", query);
             payload.put("order", order);
-            payload.put("paging", paging);
             payload.put("statuses", Arrays.asList(
-                MarketStatus.INIT,
-                MarketStatus.ON_SALE
-                                                 ));
+                    MarketStatus.INIT,
+                    MarketStatus.ON_SALE
+            ));
         }
 
         List<Market> marketList = marketRepository.readMarketList(payload);
@@ -101,10 +110,44 @@ class MarketServiceImpl implements MarketService {
     public Map<String, Object> updateMarket(Long market_id, MarketSale.Request request, User user) throws Exception {
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(request.getPassword().getBytes());
+
+        byte[] bytes = md.digest();
+
         {
+            payload.put("password", Hex.encodeHexString(bytes));
+            payload.put("user_id", user.getId());
+        }
+
+        Boolean duplicate = userRepository.duplicatePinPass(payload);
+
+        if (!duplicate) {
+            throw new ApiException(ApiErrorCode.PIN_NOT_MATCH);
+        }
+
+        {
+            payload.clear();
+            payload.put("user_id", user.getId());
+            payload.put("account_type", AccountType.CP);
+        }
+        Account CPAccount = accountRepository.readAccount(payload);
+        if (ObjectUtils.isEmpty(CPAccount)) {
+            throw new ApiException(ApiErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        if (!Arrays.asList(AccountType.DL, AccountType.DLC).contains(request.getType())) {
+            throw new ApiException(ApiErrorCode.NOT_AVAILABLE);
+        }
+
+        {
+            payload.clear();
             payload.put("market_id", market_id);
         }
         Market market = marketRepository.readMarket(payload);
+
+
         if (ObjectUtils.isEmpty(market))
             throw new ApiException(ApiErrorCode.MARKET_NOT_FOUND);
 
@@ -120,9 +163,115 @@ class MarketServiceImpl implements MarketService {
             default:
         }
 
-        {
-            payload.put("price", request.getPrice());
+
+        BigDecimal qty = request.getAmount();
+        BigDecimal bf_qty = market.getQuantity();
+
+        if (qty.equals(bf_qty)) {
+            throw new ApiException(ApiErrorCode.SAME_PREVIOUS_COUNT);
         }
+
+        {
+            payload.clear();
+            payload.put("key", PolicyCode.MARKET_FEES);
+        }
+        Policy marketFee = policyRepository.readPolicy(payload);
+        BigDecimal fee = new BigDecimal(marketFee.getValue());
+
+        {
+            payload.clear();
+            payload.put("user_id", user.getId());
+            payload.put("account_type", request.getType());
+        }
+        Account DLAccount = accountRepository.readAccount(payload);
+        if (ObjectUtils.isEmpty(DLAccount)) {
+            throw new ApiException(ApiErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+
+        BigDecimal pri = request.getPrice();
+        BigDecimal fees = qty.multiply(pri).multiply(fee).divide(new BigDecimal(100), 3, RoundingMode.CEILING);
+
+
+        BigDecimal bf_pri = market.getPrice();
+        BigDecimal bf_fees = bf_qty.multiply(bf_pri).multiply(fee).divide(new BigDecimal(100), 3, RoundingMode.CEILING);
+
+        int typeCheck = qty.compareTo(bf_qty);
+
+        if (typeCheck != 0) {
+            {
+                payload.clear();
+                if (typeCheck > 0) {
+                    payload.put("from", DLAccount.getId());
+                    payload.put("title", "DL 구매");
+                    payload.put("amount", qty.subtract(bf_qty).multiply(new BigDecimal(-1)));
+                } else {
+                    payload.put("to", DLAccount.getId());
+                    payload.put("title", "DL 환불");
+                    payload.put("amount", bf_qty.subtract(qty));
+                }
+            }
+
+            accountRepository.createTransaction(payload);
+
+            {
+                payload.clear();
+                payload.put("user_id", user.getId());
+                payload.put("account_type", AccountType.DL);
+                if (typeCheck > 0) {
+                    payload.put("quantity", DLAccount.getQuantity().subtract(qty.subtract(bf_qty)));
+                } else {
+                    payload.put("quantity", DLAccount.getQuantity().add(bf_qty.subtract(qty)));
+                }
+
+            }
+
+
+            accountRepository.updateAccount(payload);
+
+            {
+                payload.clear();
+                if (typeCheck > 0) {
+                    payload.put("from", CPAccount.getId());
+                    payload.put("title", "수수료 차감");
+                    payload.put("amount", fees.subtract(bf_fees).multiply(new BigDecimal(-1)));
+                } else {
+                    payload.put("to", CPAccount.getId());
+                    payload.put("title", "CP 환불");
+                    payload.put("amount", bf_fees.subtract(fees));
+                }
+
+            }
+
+
+            accountRepository.createTransaction(payload);
+
+
+            {
+                payload.clear();
+                payload.put("user_id", user.getId());
+                payload.put("account_type", AccountType.CP);
+                if (typeCheck > 0) {
+                    payload.put("quantity", CPAccount.getQuantity().subtract(fees.subtract((bf_fees))));
+                } else {
+                    payload.put("quantity", CPAccount.getQuantity().add(bf_fees.subtract(fees)));
+                }
+            }
+
+
+            accountRepository.updateAccount(payload);
+        }
+
+
+        {
+            payload.clear();
+            payload.put("market_id", market.getId());
+            payload.put("quantity", qty);
+            payload.put("price", pri);
+            payload.put("fees", fees);
+        }
+
+        marketRepository.updateMarket(payload);
 
         return returnMap;
     }
@@ -174,7 +323,21 @@ class MarketServiceImpl implements MarketService {
         }
         purchaseRepository.updatePurchase(payload);
 
-        return returnMap;
+        {
+            payload.clear();
+            payload.put("user_id", purchase.getBuyer().getId());
+        }
+
+        User buyer = userRepository.readUser(payload);
+
+        if (ObjectUtils.isEmpty(buyer)) {
+            throw new ApiException(ApiErrorCode.USER_NOT_FOUND);
+        }
+
+        firebaseRepository.send(buyer.getToken(), "캐시링크", "고객님이 구매 신청하신 상품에 대한 새로운 알림이 있습니다. 자세한 내용을 보려면 탭하세요.");
+
+        // 여기 추가
+         return returnMap;
     }
 
     @Override
@@ -234,6 +397,20 @@ class MarketServiceImpl implements MarketService {
         }
         marketRepository.updateMarket(payload);
 
+        {
+            payload.clear();
+            payload.put("user_id", purchase.getBuyer().getId());
+        }
+
+        User buyer = userRepository.readUser(payload);
+
+        if (ObjectUtils.isEmpty(buyer)) {
+            throw new ApiException(ApiErrorCode.USER_NOT_FOUND);
+        }
+
+      firebaseRepository.send(buyer.getToken(), "캐시링크", "고객님이 구매 신청하신 상품에 대한 새로운 알림이 있습니다. 자세한 내용을 보려면 탭하세요.");
+
+
         return returnMap;
     }
 
@@ -279,6 +456,19 @@ class MarketServiceImpl implements MarketService {
             payload.put("status", PurchaseStatus.DEPOSIT_COMPLETED);
         }
         purchaseRepository.updatePurchase(payload);
+
+        {
+            payload.clear();
+            payload.put("user_id", market.getSeller().getId());
+        }
+
+        User buyer = userRepository.readUser(payload);
+
+        if (ObjectUtils.isEmpty(buyer)) {
+            throw new ApiException(ApiErrorCode.USER_NOT_FOUND);
+        }
+
+        firebaseRepository.send(buyer.getToken(), "캐시링크", "고객님이 구매 신청하신 상품에 대한 새로운 알림이 있습니다. 자세한 내용을 보려면 탭하세요.");
 
         return returnMap;
     }
@@ -342,7 +532,7 @@ class MarketServiceImpl implements MarketService {
         }
         Account sellerAccount = accountRepository.readAccount(payload);
         if (ObjectUtils.isEmpty(sellerAccount)) throw new ApiException(
-            ApiErrorCode.ACCOUNT_NOT_FOUND);
+                ApiErrorCode.ACCOUNT_NOT_FOUND);
 
         {
             payload.clear();
@@ -362,6 +552,19 @@ class MarketServiceImpl implements MarketService {
             payload.put("amount", market.getQuantity());
         }
         accountRepository.createTransaction(payload);
+
+        {
+            payload.clear();
+            payload.put("user_id", purchase.getBuyer().getId());
+        }
+
+        User buyer = userRepository.readUser(payload);
+
+        if (ObjectUtils.isEmpty(buyer)) {
+            throw new ApiException(ApiErrorCode.USER_NOT_FOUND);
+        }
+
+        firebaseRepository.send(buyer.getToken(), "캐시링크", "고객님이 구매 신청하신 상품에 대한 새로운 알림이 있습니다. 자세한 내용을 보려면 탭하세요.");
 
         return returnMap;
     }
@@ -426,7 +629,7 @@ class MarketServiceImpl implements MarketService {
         }
 
         if (!market.getSeller().getId().equals(user.getId())) throw new ApiException(
-            ApiErrorCode.PERMISSION_DENIED);
+                ApiErrorCode.PERMISSION_DENIED);
 
         switch (market.getStatus()) {
             case DONE:
@@ -445,12 +648,15 @@ class MarketServiceImpl implements MarketService {
         if (ObjectUtils.isEmpty(DLAccount)) throw new ApiException(ApiErrorCode.ACCOUNT_NOT_FOUND);
 
         {
+            payload.clear();
+            payload.put("user_id", market.getSeller().getId());
             payload.put("account_type", AccountType.CP);
         }
         Account CPAccount = accountRepository.readAccount(payload);
         if (ObjectUtils.isEmpty(CPAccount)) throw new ApiException(ApiErrorCode.ACCOUNT_NOT_FOUND);
 
         {
+            payload.clear();
             payload.put("account_id", DLAccount.getId());
             payload.put("quantity", DLAccount.getQuantity().add(market.getQuantity()));
         }
@@ -500,11 +706,11 @@ class MarketServiceImpl implements MarketService {
         if (ObjectUtils.isEmpty(market)) throw new ApiException(ApiErrorCode.MARKET_NOT_FOUND);
 
         if (!market.getSeller().getId().equals(user.getId())) throw new ApiException(
-            ApiErrorCode.PERMISSION_DENIED);
+                ApiErrorCode.PERMISSION_DENIED);
 
         Paging paging = Paging.builder()
-            .page(page)
-            .build();
+                .page(page)
+                .build();
         {
             payload.clear();
             payload.put("market_id", market.getId());
@@ -592,7 +798,7 @@ class MarketServiceImpl implements MarketService {
     }
 
     @Override
-    public Map<String, Object> readUserSales(User user, Long page, String orderStr, MarketStatus status, String duration)
+    public Map<String, Object> readUserSales(User user, Long page, String orderStr, MarketStatus status, String duration, String query)
             throws Exception {
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
@@ -603,6 +809,7 @@ class MarketServiceImpl implements MarketService {
             payload.put("seller_id", user.getId());
             payload.put("status", status);
             payload.put("duration", duration);
+            payload.put("query", query);
             payload.put("order", order);
             payload.put("paging", paging);
         }
@@ -623,6 +830,8 @@ class MarketServiceImpl implements MarketService {
         // TODO: 제한사항 추가(최소금액, 최대금액 확인)
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
+
+
         {
             payload.put("user_id", user.getId());
             payload.put("account_type", AccountType.CP);
@@ -630,6 +839,23 @@ class MarketServiceImpl implements MarketService {
         Account fromCP = accountRepository.readAccount(payload);
         if (ObjectUtils.isEmpty(fromCP)) {
             throw new ApiException(ApiErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(request.getPassword().getBytes());
+
+        byte[] bytes = md.digest();
+
+        {
+            payload.clear();
+            payload.put("password", Hex.encodeHexString(bytes));
+            payload.put("user_id", user.getId());
+        }
+
+        Boolean duplicate = userRepository.duplicatePinPass(payload);
+
+        if (!duplicate) {
+            throw new ApiException(ApiErrorCode.PIN_NOT_MATCH);
         }
 
         if (!Arrays.asList(AccountType.DL, AccountType.DLC).contains(request.getType())) {
@@ -643,9 +869,13 @@ class MarketServiceImpl implements MarketService {
         Policy userApplyLimit = policyRepository.readPolicy(payload);
         Integer limit = Integer.parseInt(userApplyLimit.getValue());
 
+        MarketStatus[] arr = {MarketStatus.INIT, MarketStatus.ON_SALE};
+
         {
             payload.clear();
             payload.put("seller_id", user.getId());
+
+            payload.put("statuses", arr);
         }
         Long count = marketRepository.countMarketList(payload);
         if (count >= limit)
@@ -795,21 +1025,37 @@ class MarketServiceImpl implements MarketService {
         }
         marketRepository.updateMarket(payload);
 
+        {
+            payload.clear();
+            payload.put("user_id", market.getSeller().getId());
+        }
+
+        User seller = userRepository.readUser(payload);
+
+        if (ObjectUtils.isEmpty(seller)) {
+            throw new ApiException(ApiErrorCode.USER_NOT_FOUND);
+        }
+
+        firebaseRepository.send(seller.getToken(), "캐시링크", "고객님이 판매등록하신 상품에 대한 새로운 알림이 있습니다. 자세한 내용을 보려면 탭하세요.");
+
         return returnMap;
     }
 
     @Override
-    public Map<String, Object> readUserPurchases(User user, Long page, String orderStr) throws Exception {
+    public Map<String, Object> readUserPurchases(User user, Long page, String orderStr, String status, String duration, String query) throws Exception {
         Map<String, Object> returnMap = new HashMap<>();
         Map<String, Object> payload = new HashMap<>();
         Paging paging = Paging.builder()
-            .page(page)
-            .build();
+                .page(page)
+                .build();
         Order order = Order.parse(orderStr);
 
         {
             payload.put("buyer_id", user.getId());
             payload.put("order", order);
+            payload.put("duration", duration);
+            payload.put("status", status);
+            payload.put("query", query);
             payload.put("paging", paging);
         }
         List<Market> marketList = marketRepository.readMarketList(payload);

@@ -1,55 +1,55 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="MarketRepository">
 
     <select id="readMarketList" parameterType="Map" resultMap="market">
         select
-            tm.id
-            , tm.quantity
-            , tm.price
-            , tm.fees
-            , tm.status
+        tm.id
+        , tm.quantity
+        , tm.price
+        , tm.fees
+        , tm.status
         <choose>
             <when test="user != null">
-                    , exists(
-                        select
-                            1
-                        from tbl_market_like tml
-                        where tm.id = tml.market_id
-                        and tml.user_id = #{user.id}
-                    ) as isLike
+                , exists(
+                select
+                1
+                from tbl_market_like tml
+                where tm.id = tml.market_id
+                and tml.user_id = #{user.id}
+                ) as isLike
             </when>
             <otherwise>
-                    , false as isLike
+                , false as isLike
             </otherwise>
         </choose>
-            , tm.created_at
-            , tm.updated_at
-            , seller.id user_id
-            , seller.username user_username
-            , seller.name user_name
-            , seller.phone user_phone
-            , tmp.id purchase_id
-            , tmp.status purchase_status
-            , tmp.reason purchase_reason
-            , tmp.canceled_at purchase_canceled_at
-            , tmp.approved_at purchase_approved_at
-            , tmp.created_at purchase_created_at
-            , tmp.updated_at purchase_updated_at
-            , tmp.id purchase_id
-            , tmp.id purchase_id
-            , buyer.id purchase_buyer_id
-            , buyer.username purchase_buyer_username
-            , buyer.name purchase_buyer_name
-            , buyer.phone purchase_buyer_phone
+        , tm.created_at
+        , tm.updated_at
+        , seller.id user_id
+        , seller.username user_username
+        , seller.name user_name
+        , seller.phone user_phone
+        , tmp.id purchase_id
+        , tmp.status purchase_status
+        , tmp.reason purchase_reason
+        , tmp.canceled_at purchase_canceled_at
+        , tmp.approved_at purchase_approved_at
+        , tmp.created_at purchase_created_at
+        , tmp.updated_at purchase_updated_at
+        , tmp.id purchase_id
+        , tmp.id purchase_id
+        , buyer.id purchase_buyer_id
+        , buyer.username purchase_buyer_username
+        , buyer.name purchase_buyer_name
+        , buyer.phone purchase_buyer_phone
         from tbl_market tm
         left outer join tbl_market_purchase tmp on tm.id = tmp.market_id and tmp.status <![CDATA[<>]]> 'CANCEL'
         inner join tbl_user seller on tm.seller_id = seller.id
         left outer join tbl_user buyer on tmp.buyer_id = buyer.id
         <where>
             <if test="query != null and !query.equals('')">
-                and (seller.username LIKE concat('%', #{query}, '%') OR seller.name LIKE concat('%', #{query}, '%'))
+                and (tm.id LIKE concat('%', #{query}, '%'))
             </if>
             <if test="seller_id != null">
                 and seller.id = #{seller_id}
@@ -59,11 +59,18 @@
             </if>
             <if test="order != null and order.type.equals('LIKE')">
                 <if test="user != null">
-                    and exists(select 1 from tbl_market_like tml where tm.id = tml.market_id and tml.user_id = #{user.id})
+                    and exists(select 1 from tbl_market_like tml where tm.id = tml.market_id and tml.user_id =
+                    #{user.id})
                 </if>
             </if>
             <if test="buyer_id != null">
                 and buyer.id = #{buyer_id}
+            </if>
+            <if test="quanLow != null and !quanLow.equals('') and quanHigh != null and !quanHigh.equals('')">
+                and tm.quantity between #{quanLow} and #{quanHigh}
+            </if>
+            <if test="priceLow != null and !priceLow.equals('') and priceHigh != null and !priceHigh.equals('')">
+                and tm.price between #{priceLow} and #{priceHigh}
             </if>
             <if test="duration != null">
                 <choose>
@@ -71,19 +78,24 @@
                         and tm.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY)
                     </when>
                     <when test="'1WEEK'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 WEEK) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 WEEK) and date_add(curdate(), INTERVAL
+                        1 DAY)
                     </when>
                     <when test="'1MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'3MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -3 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -3 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'6MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -6 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -6 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'1YEAR'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 YEAR) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 YEAR) and date_add(curdate(), INTERVAL
+                        1 DAY)
                     </when>
                 </choose>
             </if>
@@ -94,6 +106,7 @@
                 </foreach>
             </if>
         </where>
+
         <if test="order != null">
             <choose>
                 <when test="order.type.equals('RECENT')">
@@ -109,14 +122,50 @@
         </if>
     </select>
 
+    <select id="countDeals" parameterType="Map" resultType="Map">
+        select count(1)                                                                                                     market_count_all,
+               (select count(1)
+                from tbl_market tm
+                where tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(), INTERVAL 1 DAY)) market_count_month,
+               (select count(1)
+                from tbl_market tm
+                where tm.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY))                              market_count_today,
+               (select count(1) from tbl_market_purchase tm where tm.status = 'DONE')                                       done_count_all,
+               (select count(1)
+                from tbl_market_purchase tmp
+                where ((tmp.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(), INTERVAL 1 DAY)) AND
+                       (tmp.status = 'DONE')))                                                                               done_count_month,
+               (select count(1)
+                from tbl_market_purchase tmp
+                where (tmp.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY) AND
+                       (tmp.status = 'DONE')))                                                                               done_count_today,
+
+               (select count(1)
+                from tbl_market_purchase tmp
+                where tmp.status = 'WAITING_FOR_APPROVAL')                                                                   purchases_waiting_approval,
+               (select count(1)
+                from tbl_market_purchase tmp
+                where tmp.status = 'WAITING_FOR_DEPOSIT')                                                                   purchases_waiting_deposit,
+               (select count(1)
+                from tbl_market_purchase tmp
+                where tmp.status = 'DEPOSIT_COMPLETED')                                                                   purchases_deposit_completed
+#                (select count(1)
+#                 from tbl_market_purchase tm
+#                 where tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(), INTERVAL 1 DAY)) purchases_count_month,
+#                (select count(1)
+#                 from tbl_market_purchase tm
+#                 where tm.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY))                              purchases_count_today
+        from tbl_market;
+    </select>
+
     <select id="countMarketList" parameterType="Map" resultType="Long">
         select
-            count(1)
+        count(1)
         from tbl_market tm
         inner join tbl_user tu on tm.seller_id = tu.id
         <where>
             <if test="query != null and !query.equals('')">
-                and (tu.username LIKE concat('%', #{query}, '%') OR tu.name LIKE concat('%', #{query}, '%'))
+                and (tu.id LIKE concat('%', #{query}, '%'))
             </if>
             <if test="seller_id != null">
                 and tu.id = #{seller_id}
@@ -126,7 +175,8 @@
             </if>
             <if test="order != null and order.type.equals('LIKE')">
                 <if test="user != null">
-                    and exists(select 1 from tbl_market_like tml where tm.id = tml.market_id and tml.user_id = #{user.id})
+                    and exists(select 1 from tbl_market_like tml where tm.id = tml.market_id and tml.user_id =
+                    #{user.id})
                 </if>
             </if>
             <if test="buyer_id != null">
@@ -134,25 +184,42 @@
                 select 1 from tbl_market_purchase tmp where tmp.market_id = tm.id and tmp.buyer_id = #{buyer_id}
                 )
             </if>
+            <if test="quanLow != null and !quanLow.equals('') and quanHigh != null and !quanHigh.equals('')">
+                and tm.quantity between #{quanLow} and #{quanHigh}
+            </if>
+            <if test="priceLow != null and !priceLow.equals('') and priceHigh != null and !priceHigh.equals('')">
+                and tm.price between #{priceLow} and #{priceHigh}
+            </if>
+            <if test="statuses != null">
+                and tm.status in
+                <foreach collection="statuses" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
             <if test="duration != null">
                 <choose>
                     <when test="'TODAY'.equals(duration)">
                         and tm.created_at between curdate() and date_add(curdate(), INTERVAL 1 DAY)
                     </when>
                     <when test="'1WEEK'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 WEEK) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 WEEK) and date_add(curdate(), INTERVAL
+                        1 DAY)
                     </when>
                     <when test="'1MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'3MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -3 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -3 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'6MONTH'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -6 MONTH) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -6 MONTH) and date_add(curdate(),
+                        INTERVAL 1 DAY)
                     </when>
                     <when test="'1YEAR'.equals(duration)">
-                        and tm.created_at between date_add(curdate(), INTERVAL -1 YEAR) and date_add(curdate(), INTERVAL 1 DAY)
+                        and tm.created_at between date_add(curdate(), INTERVAL -1 YEAR) and date_add(curdate(), INTERVAL
+                        1 DAY)
                     </when>
                 </choose>
             </if>
@@ -241,36 +308,37 @@
         </where>
     </update>
 
+
     <resultMap id="market" type="Market">
-        <id column="id" property="id" />
-        <result column="quantity" property="quantity" />
-        <result column="price" property="price" />
-        <result column="fees" property="fees" />
-        <result column="status" property="status" />
-        <result column="isLike" property="isLike" />
-        <result column="created_at" property="created_at" />
-        <result column="updated_at" property="updated_at" />
+        <id column="id" property="id"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="fees" property="fees"/>
+        <result column="status" property="status"/>
+        <result column="isLike" property="isLike"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
         <association property="seller">
-            <id column="user_id" property="id" />
-            <result column="user_username" property="username" />
-            <result column="user_name" property="name" />
-            <result column="user_phone" property="phone" />
+            <id column="user_id" property="id"/>
+            <result column="user_username" property="username"/>
+            <result column="user_name" property="name"/>
+            <result column="user_phone" property="phone"/>
         </association>
         <association property="purchase" columnPrefix="purchase_">
-            <id column="id" property="id" />
-            <result column="status" property="status" />
-            <result column="reason" property="reason" />
-            <result column="canceled_at" property="canceled_at" />
-            <result column="approved_at" property="approved_at" />
-            <result column="created_at" property="created_at" />
-            <result column="updated_at" property="updated_at" />
+            <id column="id" property="id"/>
+            <result column="status" property="status"/>
+            <result column="reason" property="reason"/>
+            <result column="canceled_at" property="canceled_at"/>
+            <result column="approved_at" property="approved_at"/>
+            <result column="created_at" property="created_at"/>
+            <result column="updated_at" property="updated_at"/>
             <association property="buyer" columnPrefix="buyer_">
-                <id column="id" property="id" />
-                <result column="username" property="username" />
-                <result column="name" property="name" />
-                <result column="phone" property="phone" />
+                <id column="id" property="id"/>
+                <result column="username" property="username"/>
+                <result column="name" property="name"/>
+                <result column="phone" property="phone"/>
             </association>
         </association>
-</resultMap>
+    </resultMap>
 
 </mapper>

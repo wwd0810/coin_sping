@@ -37,10 +37,10 @@ public class LoggerFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        if ("/sbp_api/api/infos/privacy".equals(((HttpServletRequest) req).getRequestURI())) {
-            chain.doFilter(req, res);
-            return;
-        }
+//        if ("/sbp_api/api/ Finfos/privacy".equals(((HttpServletRequest) req).getRequestURI())) {
+//            chain.doFilter(req, res);
+//            return;
+//        }
         HttpServletResponse resp = (HttpServletResponse) res;
         ResponseWrapper response = new ResponseWrapper(resp);
         response.setHeader("Content-Security-Policy", "script-src 'self'");

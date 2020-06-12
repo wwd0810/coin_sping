@@ -3,9 +3,15 @@ package com.laon.cashlink.service.user;
 import com.laon.cashlink.common.define.user.NotiStatus;
 import com.laon.cashlink.common.define.user.NotiSubType;
 import com.laon.cashlink.common.define.user.NotiType;
+import com.laon.cashlink.entity.common.Order;
+import com.laon.cashlink.entity.common.Paging;
 import com.laon.cashlink.entity.dto.Remit;
 import com.laon.cashlink.entity.user.User;
+import org.springframework.util.ObjectUtils;
+
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public interface UserService {
@@ -18,7 +24,7 @@ public interface UserService {
 
     Map<String, Object> remit(User user, Remit.Request request) throws Exception;
 
-    Map<String, Object> readAccountTx(String account_id, Long page, User user) throws Exception;
+    Map<String, Object> readAccountTx(String account_id, Long page, User user, String duration, String status) throws Exception;
 
     Map<String, Object> readMyNotification(User user, Long page, NotiType type, NotiSubType sub_type, NotiStatus status) throws Exception;
 
@@ -38,5 +44,10 @@ public interface UserService {
 
     //purchase
     Map<String, Object> readMyPurchases(User user, Long page) throws Exception;
+
+    // PIN Password
+    Map<String, Object> duplicatePinPass(User user, String password) throws Exception;
+
+    Map<String, Object> updatePinPass(User user, String password) throws Exception;
 
 }

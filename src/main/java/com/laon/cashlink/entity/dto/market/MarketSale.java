@@ -23,6 +23,8 @@ public class MarketSale {
 
         private BigDecimal price;
 
+        private String password;
+
     }
 
 }

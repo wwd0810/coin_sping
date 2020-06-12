@@ -22,6 +22,10 @@ public class PurchaseRepository {
         return sql.selectList("PurchaseRepository.readPurchaseList", payload);
     }
 
+    public List<Purchase> readDealList(Map<String, Object> payload) {
+        return sql.selectList("PurchaseRepository.readDealList", payload);
+    }
+
     public Long countPurchaseList(Map<String, Object> payload) {
         return sql.selectOne("PurchaseRepository.countPurchaseList", payload);
     }

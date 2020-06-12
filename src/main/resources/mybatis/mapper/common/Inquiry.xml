@@ -1,17 +1,59 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="InquiryRepository">
+
+    <select id="readAdminInquiryList" parameterType="Map" resultMap="inquiry">
+        select ti.id
+             , ti.title
+             ,ti.user_id user_id
+             , ti.contents
+             , ti.answer
+             ,ti.status
+             , ti.created_at
+             , ti.updated_at
+                ,user.id user_id
+                ,user.name user_name
+                ,user.username user_username
+                ,user.phone user_phone
+                ,user.created_at user_created_at
+                ,user.updated_at user_updated_at
+        from tbl_inquiry ti
+        inner join tbl_user user on ti.user_id = user.id
+        order by ti.created_at desc
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (ti.title LIKE concat('%', #{query}, '%') OR ti.contents LIKE concat('%', #{query}, '%') OR user.username LIKE concat('%', #{query}, '%') OR user.name LIKE concat('%', #{query}, '%'))
+            </if>
+            <if test="status != null and !status.equals('')">
+                and ti.status = #{status}
+            </if>
+        </where>
+        <if test="paging != null">
+            limit #{paging.limit} offset #{paging.offset}
+        </if>
+    </select>
+
+    <select id="countInquiry" parameterType="Map" resultType="Long">
+        select
+        count(1)
+        from tbl_inquiry
+        <where>
+            <if test="status != null and !status.equals('')">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
 
     <select id="readInquiryList" parameterType="Map" resultType="Inquiry">
         select
-            id
-            , title
-            , contents
-            , answer
-            , status
-            , created_at
-            , updated_at
+        id
+        , title
+        , contents
+        , answer
+        , status
+        , created_at
+        , updated_at
         from tbl_inquiry
         <where>
             <if test="user_id != null">
@@ -21,6 +63,23 @@
         <if test="paging != null">
             limit #{paging.limit} offset #{paging.offset}
         </if>
+    </select>
+
+    <select id="readInquiry" parameterType="Map" resultType="Inquiry">
+        select
+        id
+        , title
+        , contents
+        , answer
+        , status
+        , created_at
+        , updated_at
+        from tbl_inquiry
+        <where>
+            <if test="inquiry_id != null">
+                id = #{inquiry_id}
+            </if>
+        </where>
     </select>
 
     <insert id="createInquiry" parameterType="Map">
@@ -44,5 +103,29 @@
             </if>
         </where>
     </update>
+
+    <delete id="deleteInquiry" parameterType="Map">
+        delete
+        from tbl_inquiry
+        where id = #{inquiry_id}
+    </delete>
+
+    <resultMap id="inquiry" type="Inquiry">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="contents" property="contents"/>
+        <result column="answer" property="answer"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
+        <association property="user" columnPrefix="user_">
+            <id column="id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="name" property="name"/>
+            <result column="phone" property="phone"/>
+            <result column="created_at" property="created_at"/>
+            <result column="updated_at" property="updated_at"/>
+        </association>
+    </resultMap>
 
 </mapper>

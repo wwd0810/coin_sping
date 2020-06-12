@@ -2,6 +2,9 @@ package com.laon.cashlink.entity.common;
 
 import com.laon.cashlink.common.define.InquiryStatus;
 import java.time.LocalDateTime;
+
+import com.laon.cashlink.entity.user.User;
+import com.laon.cashlink.entity.user.UserMinify;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,5 +29,7 @@ public class Inquiry {
 
     private LocalDateTime created_at;
     private LocalDateTime updated_at;
+
+    private UserMinify user;
 
 }

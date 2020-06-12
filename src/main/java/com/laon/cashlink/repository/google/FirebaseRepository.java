@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 
 @Slf4j
@@ -36,11 +38,19 @@ public class FirebaseRepository {
     public void send(String token, String title, String body) throws FirebaseMessagingException {
         Notification notification = new Notification(title, body);
 
+        Map<String, String> payload = new HashMap<>();
+
+        {
+            payload.put("title", title);
+            payload.put("body", body);
+        }
+
         Message message = Message
                 .builder()
                 .setToken(token)
                 .setNotification(notification)
                 //TODO: 만약 핸드폰에서 title, body를 못받으면 putData로 title, body를 넣고 테스트
+                .putAllData(payload)
                 .build();
 
         String response = FirebaseMessaging.getInstance().send(message);

@@ -9,13 +9,16 @@ import com.laon.cashlink.common.exception.ApiException;
 import com.laon.cashlink.entity.dto.Remit;
 import com.laon.cashlink.entity.user.User;
 import com.laon.cashlink.service.user.UserService;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import java.security.Principal;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,7 +32,7 @@ class UserController {
 
     @RequestMapping(value = "/search", method = RequestMethod.GET)
     public Map<String, Object> searchUser(@RequestParam String type, @RequestParam String query,
-            HttpServletResponse res) {
+                                          HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -105,7 +108,7 @@ class UserController {
 
     @RequestMapping(value = "/me/account/remit", method = RequestMethod.POST)
     public Map<String, Object> remit(@AuthenticationPrincipal User user, @RequestBody Remit.Request request,
-            HttpServletResponse res) {
+                                     HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -128,14 +131,18 @@ class UserController {
     }
 
     @RequestMapping(value = "/me/account/{account_id:[0-9A-Z]{9}}/tx", method = RequestMethod.GET)
-    public Map<String, Object> readAccountTx(@PathVariable String account_id,
+    public Map<String, Object> readAccountTx(
+            @PathVariable String account_id,
             @RequestParam(required = false, defaultValue = "0") Long page, @AuthenticationPrincipal User user,
-            HttpServletResponse res) {
+            @RequestParam(required = false, defaultValue = "") String duration,
+            @RequestParam(required = false, defaultValue = "") String status,
+            HttpServletResponse res
+    ) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
             returnMap.put("result", 1);
-            returnMap.put("data", userService.readAccountTx(account_id, page, user));
+            returnMap.put("data", userService.readAccountTx(account_id, page, user, duration, status));
         } catch (ApiException e) {
             res.setStatus(e.getStatus());
             returnMap.put("result", 0);
@@ -157,10 +164,10 @@ class UserController {
      */
     @RequestMapping(value = "/me/noti", method = RequestMethod.GET)
     public Map<String, Object> readMyNotification(@AuthenticationPrincipal User user,
-            @RequestParam(required = false, defaultValue = "0") Long page,
-            @RequestParam(required = false) NotiType type,
-            @RequestParam(required = false, defaultValue = "NOT_READ") NotiStatus status,
-            @RequestParam(required = false) NotiSubType sub_type, HttpServletResponse res) {
+                                                  @RequestParam(required = false, defaultValue = "0") Long page,
+                                                  @RequestParam(required = false) NotiType type,
+                                                  @RequestParam(required = false, defaultValue = "NOT_READ") NotiStatus status,
+                                                  @RequestParam(required = false) NotiSubType sub_type, HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -213,7 +220,7 @@ class UserController {
      */
     @RequestMapping(value = "/me/noti/{noti_id:[0-9]+}", method = RequestMethod.POST)
     public Map<String, Object> readMyNoti(@AuthenticationPrincipal User user, @PathVariable Long noti_id,
-            HttpServletResponse res) {
+                                          HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -241,7 +248,7 @@ class UserController {
      */
     @RequestMapping(value = "/me/noti/{noti_id:[0-9]+}", method = RequestMethod.DELETE)
     public Map<String, Object> deleteMyNoti(@AuthenticationPrincipal User user, @PathVariable Long noti_id,
-            HttpServletResponse res) {
+                                            HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -292,7 +299,7 @@ class UserController {
 
     @RequestMapping(value = "/me/token", method = RequestMethod.PUT)
     public Map<String, Object> updateUserToken(@AuthenticationPrincipal User user, @RequestParam String token,
-            HttpServletResponse res) {
+                                               HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -368,7 +375,7 @@ class UserController {
      */
     @RequestMapping(value = "/me/purchases", method = RequestMethod.GET)
     public Map<String, Object> readMyPurchases(@AuthenticationPrincipal User user,
-            @RequestParam(required = false, defaultValue = "0") Long page, HttpServletResponse res) {
+                                               @RequestParam(required = false, defaultValue = "0") Long page, HttpServletResponse res) {
         Map<String, Object> returnMap = new HashMap<>();
 
         try {
@@ -388,6 +395,69 @@ class UserController {
         }
 
         return returnMap;
+    }
+
+
+    /*
+     * 유저 PIN 비밀번호 관련 API
+     * */
+
+    @RequestMapping(value = "/me/pin/duplicate", method = RequestMethod.GET)
+    public Map<String, Object> duplicatePinPass(
+            @AuthenticationPrincipal User user,
+            @RequestParam String password,
+            HttpServletResponse res
+    ) {
+
+        Map<String, Object> returnMap = new HashMap<>();
+
+        try {
+            returnMap.put("result", 1);
+            returnMap.put("data", userService.duplicatePinPass(user,password));
+        } catch (ApiException e) {
+            res.setStatus(e.getStatus());
+            returnMap.put("result", 0);
+            returnMap.put("resultCode", e.getCode());
+            returnMap.put("resultMsg", e.getMsg());
+        } catch (Exception e) {
+            log.error("", e);
+            res.setStatus(500);
+            returnMap.put("result", 0);
+            returnMap.put("resultCode", UNKNOWN.getCode());
+            returnMap.put("resultMsg", UNKNOWN.getMsg());
+        }
+
+        return returnMap;
+
+    }
+
+    @RequestMapping(value = "/me/pin", method = RequestMethod.PATCH)
+    public Map<String, Object> updatePinPass(
+            @AuthenticationPrincipal User user,
+            @RequestParam String password,
+            HttpServletResponse res
+    ) {
+
+        Map<String, Object> returnMap = new HashMap<>();
+
+        try {
+            returnMap.put("result", 1);
+            returnMap.put("data", userService.updatePinPass(user,password));
+        } catch (ApiException e) {
+            res.setStatus(e.getStatus());
+            returnMap.put("result", 0);
+            returnMap.put("resultCode", e.getCode());
+            returnMap.put("resultMsg", e.getMsg());
+        } catch (Exception e) {
+            log.error("", e);
+            res.setStatus(500);
+            returnMap.put("result", 0);
+            returnMap.put("resultCode", UNKNOWN.getCode());
+            returnMap.put("resultMsg", UNKNOWN.getMsg());
+        }
+
+        return returnMap;
+
     }
 
 }

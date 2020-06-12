@@ -33,4 +33,8 @@ public class User {
         private LocalDateTime created_at;
         private LocalDateTime updated_at;
 
+        private Account cp;
+
+        private Account dl;
+
 }

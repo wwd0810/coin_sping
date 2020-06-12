@@ -1,34 +1,46 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="NoticeRepository">
 
     <select id="readNoticeList" parameterType="Map" resultType="Notice">
         select
-            id
-            , title
-            , contents
-            , created_at
-            , updated_at
+        id
+        , title
+        , contents
+        , created_at
+        , updated_at
         from tbl_notice
+        order by created_at desc
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (title LIKE concat('%', #{query}, '%') OR contents LIKE concat('%', #{query}, '%') OR id LIKE
+                concat('%', #{query}, '%'))
+            </if>
+        </where>
         <if test="paging != null">
             limit #{paging.limit} offset #{paging.offset}
         </if>
     </select>
 
     <select id="countNoticeList" parameterType="Map" resultType="Long">
-        select
-            count(1)
+        select count(1)
         from tbl_notice
+        <where>
+            <if test="query != null and !query.equals('')">
+                and (title LIKE concat('%', #{query}, '%') OR contents LIKE concat('%', #{query}, '%') OR id LIKE
+                concat('%', #{query}, '%'))
+            </if>
+        </where>
     </select>
 
     <select id="readNotice" parameterType="Map" resultType="Notice">
         select
-            id
-            , title
-            , contents
-            , created_at
-            , updated_at
+        id
+        , title
+        , contents
+        , created_at
+        , updated_at
         from tbl_notice
         <where>
             <if test="notice_id != null">
@@ -60,7 +72,8 @@
     </update>
 
     <delete id="deleteNotice" parameterType="Map">
-        delete from tbl_notice
+        delete
+        from tbl_notice
         where id = #{notice_id}
     </delete>
 
